@@ -1,0 +1,17 @@
+unit AlarmManager;
+
+interface
+
+type
+  TAlarmLevel = (alNone, alWarning, alAlarm, alCritical);
+
+  TAlarmInfo = record
+    Active       : boolean;
+    Acknowledged : boolean;
+    Level        : TAlarmLevel;
+
+  end;
+
+implementation
+
+end.

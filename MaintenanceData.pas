@@ -1,0 +1,33 @@
+unit MaintenanceData;
+
+interface
+
+type
+  TMaintenanceStatus = (msOK, msServiceSoon, msMaintenanceDue, msFault);
+  //
+  TMaintenanceEquipment = record
+    EquipmentName   : string;
+    RuntimeSeconds  : Integer;
+    StartCount      : Integer;
+    LastService     : TDateTime;
+    ServiceInterval : Integer;
+    Status          : TMaintenanceStatus;
+  end;
+  //
+  TPlantMaintenanceData = record
+    PumpRuntime         : Integer;
+    PumpStarts          : Integer;
+    MotorRuntime        : Integer;
+    MotorStarts         : Integer;
+    ValveCycles         : Integer;
+    TemperatureSensorOK : Boolean;
+    PressureSensorOK    : Boolean;
+    LevelSensorOK       : Boolean;
+  end;
+  //
+var
+  PlantMaintenanceData  : TPlantMaintenanceData;
+
+implementation
+
+end.

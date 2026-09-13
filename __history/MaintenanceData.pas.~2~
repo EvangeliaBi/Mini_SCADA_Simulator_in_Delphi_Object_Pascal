@@ -1,0 +1,10 @@
+unit MaintenanceData;
+
+interface
+
+type
+  TMaintenanceStatus = (msOK, msServiceSoon, msMaintenanceDue, msFault);
+
+implementation
+
+end.

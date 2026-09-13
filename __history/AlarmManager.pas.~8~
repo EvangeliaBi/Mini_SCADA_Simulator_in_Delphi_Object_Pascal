@@ -1,0 +1,18 @@
+unit AlarmManager;
+
+interface
+
+type
+  TAlarmLevel = (alNone, alWarning, alAlarm, alCritical);
+
+  TAlarmInfo = record
+    TimeStamp         : TDateTime;
+    AlarmActive       : boolean;
+    AlarmAcknowledged : boolean;
+    AlarmLevel        : TAlarmLevel;
+    AlarmText         : string;
+  end;
+
+implementation
+
+end.

@@ -1,0 +1,98 @@
+unit ProcessStatistics;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ExtCtrls, Vcl.StdCtrls,
+  //
+  StatisticsManager;
+
+type
+  TfrmProcessStatistics = class(TForm)
+    pnlCenter: TPanel;
+    pnlTop: TPanel;
+    lblAvgTempTitle: TLabel;
+    lblMaxTemp: TLabel;
+    lblMinTemp: TLabel;
+    lblAvgPressure: TLabel;
+    lblMaxPressure: TLabel;
+    lblMinPressure: TLabel;
+    lblAvgTank1: TLabel;
+    lblAvgTank2: TLabel;
+    lblRuntime: TLabel;
+    lblMeasurements: TLabel;
+    lblWarnings: TLabel;
+    lblCritical: TLabel;
+    lblTotalAlarms: TLabel;
+    lblavgtempvalue: TLabel;
+    lblmaxtempvalue: TLabel;
+    lblmintempvalue: TLabel;
+    lblavgpressurevalue: TLabel;
+    lblmaxpressurevalue: TLabel;
+    lblminpressurevalue: TLabel;
+    lblavgtank1level: TLabel;
+    lblavgtank2level: TLabel;
+    lblsimruntime: TLabel;
+    lbltotalmeasurement: TLabel;
+    lbltotalalarmsvalue: TLabel;
+    lblwarningsvalue: TLabel;
+    lblcriticalvalue: TLabel;
+    tmrUpdate: TTimer;
+    procedure tmrUpdateTimer(Sender: TObject);
+  private
+    { Private declarations }
+    FStatisticsManager : TStatisticsManager;
+    //
+    procedure UpdateStatistics();
+  public
+    { Public declarations }
+    procedure SetStatisticsManager(AStatistics: TStatisticsManager);
+  end;
+
+var
+  frmProcessStatistics: TfrmProcessStatistics;
+
+implementation
+
+{$R *.dfm}
+
+{ TfrmProcessStatistics }
+
+procedure TfrmProcessStatistics.SetStatisticsManager(AStatistics: TStatisticsManager);
+begin
+  FStatisticsManager := AStatistics;
+end;
+
+procedure TfrmProcessStatistics.tmrUpdateTimer(Sender: TObject);
+begin
+  UpdateStatistics;
+end;
+
+procedure TfrmProcessStatistics.UpdateStatistics;
+var
+  S : TProcessStatistics;
+begin
+  if FStatisticsManager = nil then
+    begin
+      Exit;
+    end;
+  //
+  S := FStatisticsManager.GetStatistics;
+  //
+  lblavgtempvalue.Caption       := FormatFloat('0.0', S.AvgTemperature) + ' °C';
+  lblmaxtempvalue.Caption       := FormatFloat('0.0', S.MaxTemperature) + ' °C';
+  lblmintempvalue.Caption       := FormatFloat('0.0', S.MinTemperature) + ' °C';
+  lblavgpressurevalue.Caption   := FormatFloat('0.0', S.AvgPressure) + ' bar';
+  lblmaxpressurevalue.Caption   := FormatFloat('0.0', S.MaxPressure) + ' bar';
+  lblminpressurevalue.Caption   := FormatFloat('0.0', S.MinPressure) + ' bar';
+  lblavgtank1level.Caption      := FormatFloat('0', S.AvgTank1Level) + ' %';
+  lblavgtank2level.Caption      := FormatFloat('0', S.AvgTank2Level) + ' %';
+  lblsimruntime.Caption         := Format('%d:%2.2d:%2.2d', [S.SimulationSeconds div 3600, (S.SimulationSeconds div 60) mod 60, S.SimulationSeconds mod 60]);
+  lbltotalmeasurement.Caption   := IntToStr(S.TotalMeasurements);
+  lbltotalalarmsvalue.Caption   := IntToStr(S.TotalWarnings);
+  lblwarningsvalue.Caption      := IntToStr(S.TotalAlarms);
+  lblcriticalvalue.Caption      := IntToStr(S.TotalCritical);
+end;
+
+end.

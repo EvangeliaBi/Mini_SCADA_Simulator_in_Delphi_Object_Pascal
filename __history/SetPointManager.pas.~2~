@@ -1,0 +1,16 @@
+unit SetPointManager;
+
+interface
+
+type
+  TSetPoints = record
+    // Tank Control
+    Tank2StartLevel : Integer;
+    Tank2StopLevel  : Integer;
+
+    //
+  end;
+
+implementation
+
+end.

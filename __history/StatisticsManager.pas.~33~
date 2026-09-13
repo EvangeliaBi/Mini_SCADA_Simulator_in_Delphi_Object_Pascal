@@ -1,0 +1,136 @@
+unit StatisticsManager;
+
+interface
+
+type
+  TProcessStatistics = record
+    AvgTemperature    : Double;
+    MaxTemperature    : Double;
+    MinTemperature    : Double;
+    //
+    AvgPressure       : Double;
+    MaxPressure       : Double;
+    MinPressure       : Double;
+    //
+    AvgTank1Level     : Double;
+    AvgTank2Level     : Double;
+    //
+    TotalMeasurements : Integer;
+    //
+    TotalWarnings     : Integer;
+    TotalAlarms       : Integer;
+    TotalCritical     : Integer;
+    //
+    SimulationSeconds : Integer;
+  end;
+
+  TStatisticsManager = class
+    private
+      FStatistics   : TProcessStatistics;
+      FTempSum      : Double;
+      FPressureSum  : Double;
+      FTank1Sum     : Double;
+      FTank2Sum     : Double;
+      //
+    public
+      constructor Create;
+      //
+      procedure Reset;
+      procedure AddMeasurement(Temperature, Pressure : Double; Tank1, Tank2 : Integer);
+      procedure AddWarning;
+      procedure AddAlarm;
+      procedure AddCritical;
+      procedure SimulationTick;
+      //
+      function GetStatistics() : TProcessStatistics;
+  end;
+
+implementation
+
+{ TStatisticsManager }
+
+procedure TStatisticsManager.AddAlarm;
+begin
+
+end;
+
+procedure TStatisticsManager.AddCritical;
+begin
+
+end;
+
+procedure TStatisticsManager.AddMeasurement(Temperature, Pressure: Double; Tank1, Tank2: Integer);
+begin
+  Inc(FStatistics.TotalMeasurements);
+
+  // Sum Temperature
+  FTempSum := FTempSum + Temperature;
+
+  // Sum Pressure
+  FPressureSum := FPressureSum + Pressure;
+
+  // Sum Tank Levels
+  FTank1Sum := FTank1Sum + Tank1;
+  FTank2Sum := FTank2Sum + Tank2;
+
+  // Average Temperature
+  FStatistics.AvgTemperature  := FTempSum / FStatistics.TotalMeasurements;
+
+  // Average Pressure
+  FStatistics.AvgPressure := FPressureSum / FStatistics.TotalMeasurements; 
+
+  // Average Tank1
+  FStatistics.AvgTank1Level := FTank1Sum / FStatistics.TotalMeasurements; 
+
+  // Average Tank2 
+  FStatistics.AvgTank2Level := FTank2Sum / FStatistics.TotalMeasurements; 
+
+  // Maximum Temperature
+  if Temperature > FStatistics.MaxTemperature then
+    begin
+      FStatistics.MaxTemperature := Tempereature;
+    end;
+
+
+  
+end;
+
+procedure TStatisticsManager.AddWarning;
+begin
+
+end;
+
+constructor TStatisticsManager.Create;
+begin
+  inherited;
+
+  Reset;
+end;
+
+function TStatisticsManager.GetStatistics: TProcessStatistics;
+begin
+
+end;
+
+procedure TStatisticsManager.Reset;
+begin
+  FillChar(FStatistics, SizeOf(FStatistics), 0);
+  //
+  FTempSum     := 0;
+  FPressureSum := 0;
+  FTank1Sum    := 0;
+  FTank2Sum    := 0;
+  //
+  FStatistics.MinTemperature := 9999;
+  FStatistics.MinPressure	   := 9999;
+  //
+  FStatistics.MaxTemperature := -9999;
+  FStatistics.MaxPressure     := -9999;	
+end;
+
+procedure TStatisticsManager.SimulationTick;
+begin
+
+end;
+
+end.

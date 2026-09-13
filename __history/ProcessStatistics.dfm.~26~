@@ -1,0 +1,226 @@
+object frmProcessStatistics: TfrmProcessStatistics
+  Left = 0
+  Top = 0
+  Caption = 'Process Statistics Dashboard'
+  ClientHeight = 461
+  ClientWidth = 684
+  Color = clBtnFace
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -12
+  Font.Name = 'Segoe UI'
+  Font.Style = []
+  Position = poScreenCenter
+  TextHeight = 15
+  object pnlCenter: TPanel
+    Left = 0
+    Top = 0
+    Width = 684
+    Height = 461
+    Align = alClient
+    BevelOuter = bvNone
+    TabOrder = 0
+    ExplicitLeft = 8
+    ExplicitTop = 8
+    object lblAvgTempTitle: TLabel
+      Left = 160
+      Top = 56
+      Width = 116
+      Height = 15
+      Caption = 'Average Temperature:'
+    end
+    object lblMaxTemp: TLabel
+      Left = 160
+      Top = 86
+      Width = 127
+      Height = 15
+      Caption = 'Maximum Temperature:'
+    end
+    object lblMinTemp: TLabel
+      Left = 160
+      Top = 120
+      Width = 126
+      Height = 15
+      Caption = 'Minimum Temperature:'
+    end
+    object lblAvgPressure: TLabel
+      Left = 160
+      Top = 152
+      Width = 93
+      Height = 15
+      Caption = 'Average Pressure:'
+    end
+    object lblMaxPressure: TLabel
+      Left = 160
+      Top = 184
+      Width = 104
+      Height = 15
+      Caption = 'Maximum Pressure:'
+    end
+    object lblMinPressure: TLabel
+      Left = 160
+      Top = 216
+      Width = 103
+      Height = 15
+      Caption = 'Minimum Pressure:'
+    end
+    object lblAvgTank1: TLabel
+      Left = 160
+      Top = 248
+      Width = 110
+      Height = 15
+      Caption = 'Average Tank1 Level:'
+    end
+    object lblAvgTank2: TLabel
+      Left = 160
+      Top = 275
+      Width = 110
+      Height = 15
+      Caption = 'Average Tank2 Level:'
+    end
+    object lblRuntime: TLabel
+      Left = 160
+      Top = 304
+      Width = 108
+      Height = 15
+      Caption = 'Simulation Runtime:'
+    end
+    object lblMeasurements: TLabel
+      Left = 160
+      Top = 336
+      Width = 110
+      Height = 15
+      Caption = 'Total Measurements:'
+    end
+    object lblTotalAlarms: TLabel
+      Left = 160
+      Top = 368
+      Width = 69
+      Height = 15
+      Caption = 'Total Alarms:'
+    end
+    object lblWarnings: TLabel
+      Left = 160
+      Top = 400
+      Width = 53
+      Height = 15
+      Caption = 'Warnings:'
+    end
+    object lblCritical: TLabel
+      Left = 160
+      Top = 432
+      Width = 40
+      Height = 15
+      Caption = 'Critical:'
+    end
+    object Label1: TLabel
+      Left = 448
+      Top = 56
+      Width = 34
+      Height = 15
+      Caption = 'Label1'
+    end
+    object Label2: TLabel
+      Left = 448
+      Top = 86
+      Width = 34
+      Height = 15
+      Caption = 'Label2'
+    end
+    object Label3: TLabel
+      Left = 448
+      Top = 120
+      Width = 34
+      Height = 15
+      Caption = 'Label3'
+    end
+    object Label4: TLabel
+      Left = 448
+      Top = 152
+      Width = 34
+      Height = 15
+      Caption = 'Label4'
+    end
+    object Label5: TLabel
+      Left = 448
+      Top = 184
+      Width = 34
+      Height = 15
+      Caption = 'Label5'
+    end
+    object Label6: TLabel
+      Left = 448
+      Top = 216
+      Width = 34
+      Height = 15
+      Caption = 'Label6'
+    end
+    object Label7: TLabel
+      Left = 448
+      Top = 248
+      Width = 34
+      Height = 15
+      Caption = 'Label7'
+    end
+    object Label8: TLabel
+      Left = 448
+      Top = 275
+      Width = 34
+      Height = 15
+      Caption = 'Label8'
+    end
+    object Label9: TLabel
+      Left = 448
+      Top = 304
+      Width = 34
+      Height = 15
+      Caption = 'Label9'
+    end
+    object Label10: TLabel
+      Left = 448
+      Top = 336
+      Width = 40
+      Height = 15
+      Caption = 'Label10'
+    end
+    object Label11: TLabel
+      Left = 448
+      Top = 368
+      Width = 40
+      Height = 15
+      Caption = 'Label11'
+    end
+    object Label12: TLabel
+      Left = 448
+      Top = 400
+      Width = 40
+      Height = 15
+      Caption = 'Label12'
+    end
+    object Label13: TLabel
+      Left = 448
+      Top = 432
+      Width = 40
+      Height = 15
+      Caption = 'Label13'
+    end
+    object pnlTop: TPanel
+      Left = 0
+      Top = 0
+      Width = 684
+      Height = 50
+      Align = alTop
+      Caption = 'Process Statistics Dashboard'
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -19
+      Font.Name = 'Segoe UI'
+      Font.Style = [fsBold]
+      ParentFont = False
+      TabOrder = 0
+      ExplicitLeft = 1
+      ExplicitTop = 1
+      ExplicitWidth = 682
+    end
+  end
+end

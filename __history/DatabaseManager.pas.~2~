@@ -1,0 +1,18 @@
+unit DatabaseManager;
+
+interface
+
+type
+  TDatabaseManager = class
+  public
+    procedure Connect;
+    procedure Disconnect;
+
+    procedure SaveMeasurement(const Data: TProcessData);
+    procedure SaveAlarm();
+    rocedure SaveEvent();
+  end;
+
+implementation
+
+end.

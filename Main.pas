@@ -1,0 +1,838 @@
+﻿unit Main;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ExtCtrls, Vcl.StdCtrls, Vcl.Menus,
+  //
+  System.Generics.Collections, AlarmHistory, AlarmManager, SetPointManager, ProcessData,
+  DataModuleMain, EventViewer, ProcessStatistics, StatisticsManager, MaintenanceForm,
+  MaintenanceData;
+
+type
+  TSensorState = (ssOK, ssFailed);
+  TOperationMode = (omManual, omAuto);
+  TSimulationState = (ssStopped, ssRunning, ssPaused);
+  TForm1 = class(TForm)
+    pnlTitle: TPanel;
+    tmrSimulation: TTimer;
+    shAlarm: TShape;
+    lblAlarm: TLabel;
+    memoLog: TMemo;
+    pnlProcess: TPanel;
+    pbProcess: TPaintBox;
+    pnlLeft: TPanel;
+    shMotor: TShape;
+    lblMotorStatus: TLabel;
+    lblTempTitle: TLabel;
+    lblTemperature: TLabel;
+    lblPressureTitle: TLabel;
+    lblPressure: TLabel;
+    lblLevelTitle: TLabel;
+    lblLevel: TLabel;
+    pnlStatus: TPanel;
+    pnlStatusTop: TPanel;
+    pnlStatusBottom: TPanel;
+    pnlTrend: TPanel;
+    pbTrend: TPaintBox;
+    btnStart: TButton;
+    btnStop: TButton;
+    btnAckAlarm: TButton;
+    MainMenu1: TMainMenu;
+    File1: TMenuItem;
+    New1: TMenuItem;
+    View1: TMenuItem;
+    ProcessOverview1: TMenuItem;
+    AlarmHistory2: TMenuItem;
+    Configuration1: TMenuItem;
+    DatabaseSettings: TMenuItem;
+    Help1: TMenuItem;
+    Help2: TMenuItem;
+    Open: TMenuItem;
+    SaveConfiguration1: TMenuItem;
+    Exit1: TMenuItem;
+    EventHistory1: TMenuItem;
+    EventHistory2: TMenuItem;
+    MeasurementHistory1: TMenuItem;
+    CommunicationSettings1: TMenuItem;
+    CommunicationSettings2: TMenuItem;
+    UserManagement1: TMenuItem;
+    UserManual1: TMenuItem;
+    cmbOperationMode: TComboBox;
+    Simulation1: TMenuItem;
+    TemperatureSensor1: TMenuItem;
+    PressureSensor2: TMenuItem;
+    TankLevelSensor1: TMenuItem;
+    RestoreSensors1: TMenuItem;
+    Analysis1: TMenuItem;
+    ProcessStatisticsDashboard1: TMenuItem;
+    Maintenance1: TMenuItem;
+    MaintenanceDashboard1: TMenuItem;
+    procedure FormCreate(Sender: TObject);
+    procedure btnStartClick(Sender: TObject);
+    procedure btnStopClick(Sender: TObject);
+    procedure tmrSimulationTimer(Sender: TObject);
+    procedure pbProcessPaint(Sender: TObject);
+    procedure pbTrendPaint(Sender: TObject);
+    procedure btnAckAlarmClick(Sender: TObject);
+    procedure ProcessOverview1Click(Sender: TObject);
+    procedure EventHistory1Click(Sender: TObject);
+    procedure cmbOperationModeChange(Sender: TObject);
+    procedure FormDestroy(Sender: TObject);
+    procedure EventHistory2Click(Sender: TObject);
+    procedure TemperatureSensor1Click(Sender: TObject);
+    procedure ProcessStatisticsDashboard1Click(Sender: TObject);
+    procedure MaintenanceDashboard1Click(Sender: TObject);
+    //
+    const
+      // Tank Limits
+      MIN_TANK_LEVEL = 0;
+      MAX_TANK_LEVEL = 100;
+      TANK_HEIGHT = 216;
+      //
+      // Temperature Limits
+      AMBIENT_TEMPERATURE = 25.0;
+      MIN_PROCESS_TEMPERATURE = 0.0;
+      MAX_PROCESS_TEMPERATURE = 120.0;
+      //
+      // Process physics
+      TEMP_HEATING_RATE = 0.8;
+      TEMP_COOLING_RATE = 0.4;
+      //
+      // Pressure physics
+      PRESSURE_RISE_RATE = 0.08;
+      PRESSURE_DROP_RATE = 0.05;
+      //
+      // Trend
+      TREND_POINTS = 100;
+      //
+      // Motor
+      MIN_MOTOR_SPEED = 0;
+      MAX_MOTOR_SPEED = 100;
+      DEFAULT_MOTOR_SPEED = 50;
+    //
+  private
+    { Private declarations }
+  MotorON                 : Boolean;
+  MotorSpeed              : Integer;
+  MotorRuntime            : Integer;
+  Temperature             : Double;
+  Pressure                : Double;
+  Tank1Level              : Integer;
+  Tank2Level              : Integer;
+  AlarmActive             : Boolean;
+  FlowPosition            : Integer;
+  TempHistory             : array[0..TREND_POINTS-1] of Double;
+  HistoryIndex            : Integer;
+  AlarmAcknowledged       : Boolean;
+  AlarmLevel              : TAlarmLevel;
+  AlarmText               : string;
+  OperationMode           : TOperationMode;
+  ActiveAlarms            : TList<TAlarmInfo>;
+  SetPoints               : TSetPoints;
+  SimulationState         : TSimulationState;
+  TemperatureSensorState  : TSensorState;
+  PressureSensorState     : TSensorState;
+  LevelSensorState        : TSensorState;
+  StatisticsManager       : TStatisticsManager;
+
+  procedure AddLog(const Msg : string);
+  procedure SimulateProcess;
+  procedure RunSimulationCycle;
+  procedure UpdateDisplay;
+  procedure CheckAlarms;
+  procedure DrawTank(X, Y: Integer; FillPercent: Integer; const Title: string);
+  procedure DrawPipe(X1, Y1, X2, Y2: Integer; Active: Boolean);
+  procedure DrawPump(X, Y: Integer; Running: Boolean);
+  procedure DrawValve(X, Y: Integer; Opened: Boolean);
+  procedure DrawFlow;
+  procedure DrawTrend;
+  procedure EvaluateAlarms;
+  procedure ProcessControl;
+  procedure ProcessPhysics;
+  procedure ProcessLimits;
+  procedure AddAlarm(ALevel : TAlarmLevel; const Msg : string);
+  procedure RemoveAlarm(const Msg : string);
+  procedure UpdateAlarm(Condition: Boolean; ALevel: TAlarmLevel; const Msg: string);
+  procedure UpdateTrend;
+  procedure UpdateFlowAnimation;
+  procedure SaveProcessData;
+
+  //
+  function AlarmExists(const Msg: String) : Boolean;
+  function SensorAvailable(State: TSensorSTate) : Boolean;
+  public
+    { Public declarations }
+  end;
+
+var
+  Form1: TForm1;
+
+implementation
+
+{$R *.dfm}
+
+procedure TForm1.AddAlarm(ALevel: TAlarmLevel; const Msg: string);
+var
+  Alarm : TAlarmInfo;
+begin
+  if AlarmExists(Msg) then
+    Exit;
+  //
+  Alarm.TimeStamp := Now;
+  Alarm.AlarmLevel := ALevel;
+  Alarm.AlarmText := Msg;
+  Alarm.AlarmActive := True;
+  Alarm.AlarmAcknowledged := False;
+  //
+  ActiveAlarms.Add(Alarm);
+  //
+  case ALevel of
+    alWarning:
+      StatisticsManager.AddWarning;
+    //
+    alAlarm:
+      StatisticsManager.AddAlarm;
+    //
+    alCritical:
+      StatisticsManager.AddCritical;
+  end;
+  //
+  AddLog('Alarm: ' + Msg);
+end;
+
+procedure TForm1.AddLog(const Msg: string);
+begin
+  memoLog.Lines.Add(FormatDateTime('hh:nn:ss', Now) + ' ' + Msg);
+  DMMain.SaveEvent(Msg);
+end;
+
+function TForm1.AlarmExists(const Msg: String): Boolean;
+var
+  Alarm : TAlarmInfo;
+//
+begin
+  Result := False;
+
+  for Alarm in ActiveAlarms do
+    begin
+      if Alarm.AlarmText = Msg then
+        begin
+          Result := True;
+          Exit;
+        end;
+    end;
+end;
+
+procedure TForm1.ProcessControl;
+begin
+  case OperationMode of
+    omManual:
+    begin
+      // Manual Control from Start / Stop buttons based on the user.
+    end;
+    //
+    omAuto:
+    begin
+      // Tank2 Low level.
+      if Tank2Level <= SetPoints.Tank2StartLevel then
+      begin
+        if not MotorON then
+        begin
+          MotorON := True;
+          AddLog('AUTO : Motor Started');
+        end;
+      end;
+      // Tank2 Full.
+      if Tank2Level >= SetPoints.Tank2StopLevel then
+      begin
+        if MotorON then
+        begin
+          MotorON := False;
+          AddLog('AUTO : Motor Stopped');
+        end;
+      end;
+    end;
+  end;
+end;
+
+procedure TForm1.ProcessLimits;
+begin
+  if Tank1Level > MAX_TANK_LEVEL then
+    begin
+       Tank1Level := MAX_TANK_LEVEL;
+    end;
+  //
+  if Tank1Level < MIN_TANK_LEVEL then
+    begin
+      Tank1Level := MIN_TANK_LEVEL;
+    end;
+  //
+  if Tank2Level > MAX_TANK_LEVEL then
+    begin
+      Tank2Level := MAX_TANK_LEVEL;
+    end;
+  //
+  if Tank2Level < MIN_TANK_LEVEL then
+    begin
+      Tank2Level := MIN_TANK_LEVEL;
+    end;
+  //
+  if Temperature > MAX_PROCESS_TEMPERATURE then
+    begin
+      Temperature := MAX_PROCESS_TEMPERATURE;
+    end;
+  //
+  if Temperature < MIN_PROCESS_TEMPERATURE then
+    begin
+      Temperature := MIN_PROCESS_TEMPERATURE;
+    end;
+  //
+  if Pressure < 0 then
+    begin
+       Pressure := 0;
+    end;
+end;
+
+procedure TForm1.ProcessOverview1Click(Sender: TObject);
+  begin
+  // frmAlarmHistory.Show;
+  end;
+
+procedure TForm1.ProcessPhysics;
+begin
+  if MotorON then
+  begin
+    if Tank1Level > MIN_TANK_LEVEL then
+    begin
+      Dec(Tank1Level);
+      if Tank2Level < MAX_TANK_LEVEL then
+        begin
+          Inc(Tank2Level);
+        end;
+    end;
+    //
+    if SensorAvailable(TemperatureSensorState) then
+      begin
+        Temperature := Temperature + (TEMP_HEATING_RATE * MotorSpeed / 100);
+      end;
+    if SensorAvailable(PressureSensorState) then
+      begin
+        Pressure := Pressure + (PRESSURE_RISE_RATE * MotorSpeed / 100);
+      end;
+  end
+  else
+    begin
+      if SensorAvailable(TemperatureSensorState) then
+        begin
+          if Temperature > AMBIENT_TEMPERATURE then
+            begin
+              Temperature := Temperature - TEMP_COOLING_RATE;
+            end;
+        end;
+      //
+      if SensorAvailable(PressureSensorState) then
+        begin
+          if Pressure > 0 then
+            begin
+              Pressure := Pressure - PRESSURE_DROP_RATE;
+            end;
+        end;
+      //
+      if Tank1Level < MAX_TANK_LEVEL then
+        begin
+          Inc(Tank1Level);
+        end;
+      //
+      if Tank2Level > 0 then
+        begin
+          Dec(Tank2Level);
+        end;
+    end;
+end;
+
+procedure TForm1.ProcessStatisticsDashboard1Click(Sender: TObject);
+begin
+  frmProcessStatistics.SetStatisticsManager(StatisticsManager);
+  frmProcessStatistics.Show;
+end;
+
+procedure TForm1.RemoveAlarm(const Msg: string);
+var
+  i : Integer;
+begin
+  if ActiveAlarms.Count = 0 then
+    begin
+      Exit;
+    end;
+  //
+  for i := ActiveAlarms.Count -1 downto 0 do
+    begin
+      if ActiveAlarms[i].AlarmText = Msg then
+        begin
+          ActiveAlarms.Delete(i);
+          AddLog('AlarmCleared: ' + Msg);
+        end;
+    end;
+end;
+
+procedure TForm1.RunSimulationCycle;
+begin
+  SimulateProcess;
+  EvaluateAlarms;
+  CheckAlarms;
+  UpdateDisplay;
+end;
+
+procedure TForm1.btnAckAlarmClick(Sender: TObject);
+var
+  i : Integer;
+  Alarm : TAlarminfo;
+begin
+  for i := 0 to ActiveAlarms.Count - 1 do
+    begin
+      Alarm := ActiveAlarms[i];
+      Alarm.AlarmAcknowledged := True;
+      ActiveAlarms[i] := Alarm;
+    end;
+  //
+  AddLog('All alarms acknowledged');
+  CheckAlarms;
+end;
+
+procedure TForm1.btnStartClick(Sender: TObject);
+begin
+  SimulationState        := ssRunning;
+  btnStart.Enabled       := False;
+  btnStop.Enabled        := True;
+  MotorON                := True;
+  MotorSpeed             := DEFAULT_MOTOR_SPEED;
+  shMotor.Brush.Color    := clGreen;
+  lblMotorStatus.Caption := 'MOTOR ON';
+
+  AddLog('Simulation Started');
+end;
+
+procedure TForm1.btnStopClick(Sender: TObject);
+begin
+  SimulationState        := ssStopped;
+  btnStart.Enabled       := True;
+  btnStop.Enabled        := False;
+  MotorON                := False;
+  MotorSpeed             := 0;
+  shMotor.Brush.Color    := clRed;
+  lblMotorStatus.Caption := 'MOTOR OFF';
+
+  AddLog('Simulation Stopped');
+end;
+
+procedure TForm1.CheckAlarms;
+var
+  Alarm : TAlarmInfo;
+begin
+  if ActiveAlarms.Count = 0 then
+    begin
+      AlarmActive := False;
+
+      shAlarm.Brush.Color := clLime;
+      lblAlarm.Caption := 'SYSTEM OK';
+
+      Exit;
+    end;
+    // The first alarm which we will receive.
+   Alarm := ActiveAlarms.First;
+
+   AlarmActive := True;
+    if Alarm.AlarmAcknowledged then
+      begin
+        shAlarm.Brush.Color := clYellow;
+        lblAlarm.Caption := Alarm.AlarmText + ' ACK';
+        Exit;
+      end;
+    //
+    case Alarm.AlarmLevel of
+      alWarning:
+      begin
+        shAlarm.Brush.Color := clyellow;
+        lblAlarm.Caption    := Alarm.AlarmText;
+      end;
+      //
+      alAlarm, alCritical:
+        begin
+          shAlarm.Brush.Color := clRed;
+          lblAlarm.Caption    := Alarm.AlarmText;
+        end;
+    end;
+end;
+
+procedure TForm1.cmbOperationModeChange(Sender: TObject);
+begin
+  case cmbOperationMode.ItemIndex of
+    0:
+      begin
+        OperationMode := omManual;
+        AddLog('Operation Mode changed to Manual');
+      end;
+    1:
+      begin
+        OperationMode := omAuto;
+        AddLog('Operation Mode changed to Auto');
+      end;
+  end;
+  //
+  case OperationMode of
+    omManual:
+      begin
+        btnStart.Enabled := True;
+        btnStop.Enabled := True;
+      end;
+    omAuto:
+      begin
+        btnStart.Enabled := False;
+        btnStop.Enabled := False;
+      end;
+  end;
+end;
+
+procedure TForm1.DrawFlow;
+begin
+  if not MotorON then
+    Exit;
+
+  with pbProcess.Canvas do
+  begin
+    Brush.Color := clBlue;
+
+    Ellipse(170 + FlowPosition, 160, 185 + FlowPosition, 175);
+  end;
+end;
+
+procedure TForm1.DrawPipe(X1, Y1, X2, Y2: Integer; Active: Boolean);
+begin
+  with pbProcess.Canvas do
+  begin
+    Pen.Width := 6;
+
+    if Active then
+      Pen.Color := clBlue
+    else
+      Pen.Color := clGray;
+
+    MoveTo(X1, Y1);
+    LineTo(X2, Y2);
+  end;
+end;
+
+procedure TForm1.DrawPump(X, Y: Integer; Running: Boolean);
+begin
+  with pbProcess.Canvas do
+  begin
+    Pen.Width := 2;
+
+    if Running then
+      Brush.Color := clLime
+    else
+      Brush.Color := clSilver;
+
+    Ellipse(X, Y, X + 60, Y + 60);
+
+    Brush.Style := bsClear;
+    TextOut(X + 8, Y + 70, 'PUMP');
+  end;
+end;
+
+procedure TForm1.DrawTank(X, Y: Integer; FillPercent: Integer; const Title: string);
+var
+  WaterHeight: Integer;
+begin
+  with pbProcess.Canvas do
+  begin
+    Pen.Width := 2;
+    Brush.Style := bsClear;
+
+    Rectangle(X, Y, X + 100, Y + 220);
+
+    WaterHeight := Round(FillPercent * TANK_HEIGHT / MAX_TANK_LEVEL);
+
+    Brush.Style := bsSolid;
+    Brush.Color := clAqua;
+
+    Rectangle(
+      X + 2,
+      Y + 218 - WaterHeight,
+      X + 98,
+      Y + 218
+    );
+
+    Brush.Style := bsClear;
+    TextOut(X + 22, Y + 230, Title);
+  end;
+end;
+
+procedure TForm1.DrawTrend;
+begin
+
+end;
+
+procedure TForm1.DrawValve(X, Y: Integer; Opened: Boolean);
+begin
+  with pbProcess.Canvas do
+  begin
+
+    Pen.Width := 2;
+
+    if Opened then
+      Brush.Color := clLime
+    else
+      Brush.Color := clRed;
+
+    Polygon([
+      Point(X,Y),
+      Point(X+20,Y+20),
+      Point(X,Y+40),
+      Point(X-20,Y+20)
+    ]);
+  end;
+end;
+
+procedure TForm1.EvaluateAlarms;
+begin
+  AlarmLevel := alNone;
+  AlarmText := 'SYSTEM OK';
+  //
+  UpdateAlarm(Temperature >= SetPoints.HighTemperature, alAlarm, 'HIGH TEMPERATURE');
+
+  UpdateAlarm(Pressure >= SetPoints.HighPressure, alAlarm, 'HIGH PRESSURE');
+
+  UpdateAlarm(Pressure <= SetPoints.LowPressure, alWarning, 'LOW PRESSURE');
+
+  UpdateAlarm(Tank1Level >= SetPoints.HighLevel, alWarning, 'HIGH LEVEL');
+
+  UpdateAlarm(Tank1Level <= SetPoints.LowLevel, alWarning, 'LOW LEVEL');
+end;
+
+procedure TForm1.EventHistory1Click(Sender: TObject);
+begin
+  frmEventHistory.Show;
+end;
+
+procedure TForm1.EventHistory2Click(Sender: TObject);
+begin
+  frmAlarmHistory.Show;
+end;
+
+procedure TForm1.FormCreate(Sender: TObject);
+begin
+
+  SimulationState := ssStopped;
+  ActiveAlarms := TList<TAlarmInfo>.Create;
+
+  cmbOperationMode.Items.Clear;
+  cmbOperationMode.Items.Add('MANUAL');
+  cmbOperationMode.Items.Add('AUTO');
+
+  FlowPosition      := 0;
+  HistoryIndex      := 0;
+  AlarmAcknowledged := False;
+  AlarmLevel        := alNone;
+  AlarmText         := '';
+  FillChar(TempHistory, SizeOf(TempHistory), 0);
+
+  btnStart.Enabled  := True;
+  btnStop.Enabled   := False;
+
+  Randomize;
+
+  AlarmActive   := False;
+  MotorON       := False;
+  MotorSpeed    := DEFAULT_MOTOR_SPEED;
+  MotorRuntime  := 0;
+
+  // Initial Normal Values
+  Temperature := AMBIENT_TEMPERATURE;
+  Pressure := 2.5;
+  Tank1Level := MAX_TANK_LEVEL;
+  Tank2Level := 0;
+
+  // Default SetPoints
+  SetPoints.Tank2StartLevel := 20;
+  SetPoints.Tank2StopLevel := 90;
+
+  SetPoints.HighTemperature := 80;
+  SetPoints.HighPressure := 5;
+  SetPoints.LowPressure := 1.5;
+
+  SetPoints.HighLevel := 90;
+  SetPoints.LowLevel := 10;
+
+  shMotor.Brush.Color := clRed;
+  lblMotorStatus.Caption := 'MOTOR OFF';
+
+  AddLog('Application Started');
+  cmbOperationMode.ItemIndex := 0;
+  OperationMode := omManual;
+
+  UpdateDisplay;
+  //
+  TemperatureSensorState := ssOK;
+  PressureSensorState    := ssOK;
+  LevelSensorState       := ssOK;
+  //
+  StatisticsManager := TStatisticsManager.Create;
+end;
+
+procedure TForm1.FormDestroy(Sender: TObject);
+begin
+  StatisticsManager.Free();
+  ActiveAlarms.Free();
+end;
+
+procedure TForm1.MaintenanceDashboard1Click(Sender: TObject);
+begin
+  TfrmMaintenance.Show;
+end;
+
+procedure TForm1.pbProcessPaint(Sender: TObject);
+begin
+  pbProcess.Canvas.Brush.Color := clWhite;
+  pbProcess.Canvas.FillRect(pbProcess.ClientRect);
+  //
+  DrawTank(40,60,Tank1Level,'TANK 1');
+  DrawTank(520,60,Tank2Level,'TANK 2');
+  DrawValve(200,150,MotorON);
+  DrawPipe(140,170,300,170,MotorON);
+  DrawPump(300,140,MotorON);
+  DrawPipe(360,170,520,170,MotorON);
+  DrawValve(450,150,MotorON);
+  //
+  DrawFlow;
+end;
+
+procedure TForm1.pbTrendPaint(Sender: TObject);
+var
+  i: Integer;
+  x,y: Integer;
+begin
+
+  with pbTrend.Canvas do
+  begin
+    Brush.Color := clWhite;
+    FillRect(pbTrend.ClientRect);
+    Pen.Color := clBlue;
+    Pen.Width := 2;
+    MoveTo(0,200);
+
+    for i := 0 to 99 do
+    begin
+      x := i * 5;
+      y := 200 - Round((TempHistory[i]-20) * 3);
+      LineTo(x,y);
+    end;
+  end;
+end;
+
+procedure TForm1.SaveProcessData;
+begin
+  DMMain.SaveMeasurement(Temperature, Pressure, Tank1Level, MotorON);
+end;
+
+function TForm1.SensorAvailable(State: TSensorSTate): Boolean;
+begin
+  Result := State = ssOK;
+end;
+
+procedure TForm1.SimulateProcess;
+begin
+  ProcessControl;
+  ProcessPhysics;
+  ProcessLimits;
+end;
+
+procedure TForm1.TemperatureSensor1Click(Sender: TObject);
+begin
+  if TemperatureSensorState = ssOK then
+    begin
+      TemperatureSensorState := ssFailed;
+      AddAlarm(alAlarm, 'TEMPERATURE SENSOR FAILURE');
+      AddLog('Temperature Sensor Failed');
+    end
+  else
+    begin
+      TemperatureSensorState := ssOK;
+      RemoveAlarm('TEMPERATURE SENSOR FAILURE');
+      AddLog('Temperature Sensor Restored');
+    end;
+  //
+  CheckAlarms;
+end;
+
+procedure TForm1.tmrSimulationTimer(Sender: TObject);
+begin
+  if SimulationState <> ssRunning then
+    begin
+      Exit;
+    end;
+  //
+  RunSimulationCycle;
+  UpdateTrend;
+  UpdateFlowAnimation;
+  SaveProcessData;
+  //
+  PlantMaintenanceData.PumpRuntime          := MotorRuntime;
+  PlantMaintenanceData.MotorRuntime         := MotorRuntime;
+  PlantMaintenanceData.TemperatureSensorOK  := TemperatureSensorState = ssOK;
+  PlantMaintenanceData.PressureSensorOK     := PressureSensorState  = ssOK;
+  PlantMaintenanceData.LevelSensorOK        := LevelSensorState = ssOK;
+  //
+  StatisticsManager.AddMeasurement(Temperature, Pressure, Tank1Level, Tank2Level);
+  StatisticsManager.SimulationTick;
+end;
+
+procedure TForm1.UpdateAlarm(Condition: Boolean; ALevel: TAlarmLevel; const Msg: string);
+begin
+  if Condition then
+    begin
+      AddAlarm(ALevel, Msg);
+    end
+  else
+    begin
+      RemoveAlarm(Msg);
+    end;
+end;
+
+procedure TForm1.UpdateDisplay;
+begin
+  lblTemperature.Caption := FormatFloat('0.0', Temperature) + ' °C';
+  lblPressure.Caption := FormatFloat('0.00', Pressure) + ' bar';
+  lblLevel.Caption := IntToStr(Tank1Level) + ' %';
+
+  pbProcess.Invalidate;
+end;
+
+procedure TForm1.UpdateFlowAnimation;
+begin
+  if not MotorOn then
+    Exit;
+  //
+  Inc(FlowPosition);
+  //
+  if FlowPosition > 100 then
+    begin
+      FlowPosition := 0;
+    end;
+end;
+
+procedure TForm1.UpdateTrend;
+begin
+  TempHistory[HistoryIndex] := Temperature;
+  Inc(HistoryIndex);
+  //
+  if HistoryIndex > High(TempHistory) then
+    begin
+      HistoryIndex := 0;
+    end;
+  //
+  pbTrend.Invalidate;
+end;
+end.

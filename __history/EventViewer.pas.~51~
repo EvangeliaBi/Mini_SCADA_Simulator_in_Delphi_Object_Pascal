@@ -1,0 +1,128 @@
+unit EventViewer;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls, Data.DB,
+  Vcl.Grids, Vcl.DBGrids, FireDAC.Stan.Intf, FireDAC.Stan.Option,
+  FireDAC.Stan.Param, FireDAC.Stan.Error, FireDAC.DatS, FireDAC.Phys.Intf,
+  FireDAC.DApt.Intf, FireDAC.Stan.Async, FireDAC.DApt, FireDAC.Comp.DataSet,
+  FireDAC.Comp.Client,
+  //
+  DataModuleMain, Vcl.ComCtrls;
+
+type
+  TfrmEventHistory = class(TForm)
+    pnlTop: TPanel;
+    btnRefresh: TButton;
+    btnClose: TButton;
+    DBGrid1: TDBGrid;
+    dsEvents: TDataSource;
+    QryEvents: TFDQuery;
+    pnlSearch: TPanel;
+    btnSearch: TButton;
+    lblSearch: TLabel;
+    edtSearch: TEdit;
+    btnClear: TButton;
+    dtFrom: TDateTimePicker;
+    dtTo: TDateTimePicker;
+    lblFrom: TLabel;
+    lblTo: TLabel;
+    procedure FormShow(Sender: TObject);
+    procedure btnRefreshClick(Sender: TObject);
+    procedure btnCloseClick(Sender: TObject);
+    procedure btnSearchClick(Sender: TObject);
+    procedure btnClearClick(Sender: TObject);
+    procedure edtSearchKeyPress(Sender: TObject; var Key: Char);
+  private
+    { Private declarations }
+    procedure RefreshEvents;
+  public
+    { Public declarations }
+  end;
+
+var
+  frmEventHistory: TfrmEventHistory;
+
+implementation
+
+{$R *.dfm}
+
+{ TfrmEventHistory }
+
+procedure TfrmEventHistory.btnClearClick(Sender: TObject);
+begin
+  edtSearch.Clear;
+
+  dtFrom.Date := Date;
+  dtTo.Date := Date;
+  RefreshEvents;
+end;
+
+procedure TfrmEventHistory.btnCloseClick(Sender: TObject);
+begin
+  Close;
+end;
+
+procedure TfrmEventHistory.btnRefreshClick(Sender: TObject);
+begin
+  RefreshEvents;
+  //
+  DBGrid1.Columns[0].Title.Caption := 'ID';
+  DBGrid1.Columns[1].Title.Caption := 'Date / Time';
+  DBGrid1.Columns[2].Title.Caption := 'Event';
+
+  DBGrid1.Columns[0].Width := 60;
+  DBGrid1.Columns[1].Width := 170;
+  DBGrid1.Columns[2].Width := 450;
+end;
+
+procedure TfrmEventHistory.btnSearchClick(Sender: TObject);
+begin
+  RefreshEvents;
+end;
+
+procedure TfrmEventHistory.edtSearchKeyPress(Sender: TObject; var Key: Char);
+begin
+  if Key = #13 then
+    begin
+      RefreshEvents;
+      Key := #0;
+    end;
+end;
+
+procedure TfrmEventHistory.FormShow(Sender: TObject);
+begin
+  dtFrom.Date := Date;
+  dtTo.Date := Date;
+  RefreshEvents;
+  //
+  DBGrid1.Columns[0].Title.Caption := 'ID';
+  DBGrid1.Columns[1].Title.Caption := 'Date / Time';
+  DBGrid1.Columns[2].Title.Caption := 'Event';
+
+  DBGrid1.Columns[0].Width := 60;
+  DBGrid1.Columns[1].Width := 170;
+  DBGrid1.Columns[2].Width := 450;
+end;
+
+procedure TfrmEventHistory.RefreshEvents;
+begin
+  qryEvents.Close;
+
+  qryEvents.SQL.Text := 'SELECT ID, TimeStamp, Event ' +
+                        'FROM Events ' +
+                        'WHERE Event LIKE :Search ' +
+                        'AND DATE(TimeStamp) BETWEEN :DateFrom AND :DateTo ' +
+                        'ORDER BY ID DESC';
+
+  qryEvents.ParamByName('Search').AsString := '%' + edtSearch.Text + '%';
+
+  qryEvents.ParamByName('DateFrom').AsString := FormatDateTime('yyyy-mm-dd', dtFrom.Date);
+  qryEvents.ParamByName('DateTo').AsString := FormatDateTime('yyyy-mm-dd', dtTo.Date);
+
+  qryEvents.Open;
+end;
+
+end.

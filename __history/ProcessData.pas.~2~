@@ -1,0 +1,14 @@
+unit ProcessData;
+
+interface
+
+type
+  TProcessData = record
+    Temperature : Double;
+    Pressure    : Double;
+
+  end;
+
+implementation
+
+end.

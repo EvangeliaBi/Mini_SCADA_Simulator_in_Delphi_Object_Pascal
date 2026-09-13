@@ -1,0 +1,16 @@
+unit MaintenanceData;
+
+interface
+
+type
+  TMaintenanceStatus = (msOK, msServiceSoon, msMaintenanceDue, msFault);
+  //
+  TMaintenanceEquipment = record
+    EquipmentName   : string;
+    RuntimeSeconds  : Integer;
+
+  end;
+
+implementation
+
+end.

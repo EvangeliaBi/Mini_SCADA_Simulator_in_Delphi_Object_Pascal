@@ -1,0 +1,30 @@
+program Mini_SCADA_Simulator;
+
+uses
+  Vcl.Forms,
+  Main in 'Main.pas' {Form1},
+  AlarmHistory in 'AlarmHistory.pas' {frmAlarmHistory},
+  AlarmManager in 'AlarmManager.pas',
+  ProcessData in 'ProcessData.pas',
+  DatabaseManager in 'DatabaseManager.pas',
+  DataModuleMain in 'DataModuleMain.pas' {DMMain: TDataModule},
+  EventViewer in 'EventViewer.pas' {frmEventHistory},
+  SetPointManager in 'SetPointManager.pas',
+  ProcessStatistics in 'ProcessStatistics.pas' {frmProcessStatistics},
+  StatisticsManager in 'StatisticsManager.pas',
+  MaintenanceForm in 'MaintenanceForm.pas' {TfrmMaintenance},
+  MaintenanceData in 'MaintenanceData.pas';
+
+{$R *.res}
+
+begin
+  Application.Initialize;
+  Application.MainFormOnTaskbar := True;
+  Application.CreateForm(TDMMain, DMMain);
+  Application.CreateForm(TForm1, Form1);
+  Application.CreateForm(TfrmAlarmHistory, frmAlarmHistory);
+  Application.CreateForm(TfrmEventHistory, frmEventHistory);
+  Application.CreateForm(TfrmProcessStatistics, frmProcessStatistics);
+  Application.CreateForm(TTfrmMaintenance, TfrmMaintenance);
+  Application.Run;
+end.

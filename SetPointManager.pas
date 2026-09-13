@@ -1,0 +1,21 @@
+unit SetPointManager;
+
+interface
+
+type
+  TSetPoints = record
+    // Tank Control
+    Tank2StartLevel   : Integer;
+    Tank2StopLevel    : Integer;
+
+    // Alarm Limits
+    HighTemperature   : Double;
+    HighPressure      : Double;
+    LowPressure       : Double;
+    HighLevel         : Integer;
+    LowLevel          : Integer;
+  end;
+
+implementation
+
+end.

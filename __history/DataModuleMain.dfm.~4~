@@ -1,0 +1,18 @@
+object DMMain: TDMMain
+  Height = 750
+  Width = 1000
+  PixelsPerInch = 120
+  object FDConnection: TFDConnection
+    Left = 296
+    Top = 96
+  end
+  object SQLiteDriver: TFDPhysSQLiteDriverLink
+    Left = 472
+    Top = 96
+  end
+  object qry: TFDQuery
+    Connection = FDConnection
+    Left = 376
+    Top = 200
+  end
+end

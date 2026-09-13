@@ -1,0 +1,205 @@
+unit MaintenanceForm;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ExtCtrls, Vcl.StdCtrls, Vcl.ComCtrls,
+  Vcl.Grids,
+  //
+  System.Generics.Collections,
+  //
+  MaintenanceData;
+
+type
+  TTfrmMaintenance = class(TForm)
+    pnlCeneter: TPanel;
+    pnlTitleTop: TPanel;
+    lblmotorRunTime: TLabel;
+    lblMotorStarts: TLabel;
+    shStatus: TShape;
+    btnResetMaintenance: TButton;
+    pbWear: TProgressBar;
+    sgMaintenance: TStringGrid;
+    gbMaintenance: TGroupBox;
+    lblRunTimeValue: TLabel;
+    lblMotorStartsValue: TLabel;
+    lblMaintenanceStatusValue: TLabel;
+    lblMaintenanceStatus: TLabel;
+    lblServiceTitle: TLabel;
+    lblService: TLabel;
+    btnClose: TButton;
+    procedure FormCreate(Sender: TObject);
+    procedure FormDestroy(Sender: TObject);
+  private
+    { Private declarations }
+    EquipmentList : TList<TMaintenanceEquipment>;
+    //
+    procedure LoadEquipment;
+    procedure RefreshGrid;
+  public
+    { Public declarations }
+  end;
+
+var
+  TfrmMaintenance: TTfrmMaintenance;
+
+implementation
+
+{$R *.dfm}
+
+{ TTfrmMaintenance }
+
+procedure TTfrmMaintenance.FormCreate(Sender: TObject);
+begin
+  EquipmentList := TList<TMaintenanceEquipment>.Create;
+  //
+  LoadEquipment;
+  RefreshGrid;
+end;
+
+procedure TTfrmMaintenance.FormDestroy(Sender: TObject);
+begin
+  EquipmentList.Free;
+end;
+
+procedure TTfrmMaintenance.LoadEquipment;
+var
+  Eq  : TMaintenanceEquipment;
+begin
+  EquipmentList.Clear;
+  //
+  // Pump
+  Eq.EquipmentName    := 'Pump P-101';
+  Eq.RuntimeSeconds   := 0;
+  Eq.StartCount       := 0;
+  Eq.LastService      := Now();
+  Eq.ServiceInterval  := 600;
+  Eq.Status           := msOK;
+  //
+  EquipmentList.Add(Eq);
+  //
+  // Motor
+  Eq.EquipmentName    := 'Motor M-101';
+  Eq.RuntimeSeconds   := 0;
+  Eq.StartCount       := 0;
+  Eq.LastService      := Now();
+  Eq.ServiceInterval  := 600;
+  Eq.Status           := msOK;
+  //
+  EquipmentList.Add(Eq);
+  //
+  // Valve
+  Eq.EquipmentName    := 'Valve V-101';
+  Eq.RuntimeSeconds   := 0;
+  Eq.StartCount       := 0;
+  Eq.LastService      := Now();
+  Eq.ServiceInterval  := 1200;
+  Eq.Status           := msOK;
+  //
+  EquipmentList.Add(Eq);
+  //
+  // Temperature Sensor
+  Eq.EquipmentName := 'Temperature Sensor';
+  Eq.RuntimeSeconds := 0;
+  Eq.StartCount := 0;
+  Eq.LastService := 0;
+  Eq.ServiceInterval := 0;
+  Eq.Status := msOK;
+  //
+  EquipmentList.Add(Eq);
+  //
+  // Pressure Sensor
+  Eq.EquipmentName := 'Pressure Sensor';
+  Eq.RuntimeSeconds := 0;
+  Eq.StartCount := 0;
+  Eq.LastService := 0;
+  Eq.ServiceInterval := 0;
+  Eq.Status := msOK;
+  //
+  EquipmentList.Add(Eq);
+  //
+  // Level Sensor
+  Eq.EquipmentName := 'Level Sensor';
+  Eq.RuntimeSeconds := 0;
+  Eq.StartCount := 0;
+  Eq.LastService := 0;
+  Eq.ServiceInterval := 0;
+  Eq.Status := msOK;
+  //
+  EquipmentList.Add(Eq);      
+end;
+
+procedure TTfrmMaintenance.RefreshGrid;
+var
+  i : Integer;
+begin
+  sgMaintenance.ColCount  := 6;
+  sgMaintenance.RowCount  := EquipmentList.Count + 1;
+  //
+  sgMaintenance.Cells[0, 0] :=  'Equipment';
+  sgMaintenance.Cells[1, 0] :=  'Runtime';
+  sgMaintenance.Cells[2, 0] :=  'Starts';
+  sgMaintenance.Cells[3, 0] :=  'Last Service';
+  sgMaintenance.Cells[4, 0] :=  'Next Service';
+  sgMaintenance.Cells[5, 0] :=  'Status';
+  //
+  //Pump
+  PlantMaintenanceData.PumpRuntime  := EquipmentList[0].RuntimeSeconds;
+  PlantMaintenanceData.PumpStarts   := EquipmentList[0].StartCount;
+  //Motor
+  PlantMaintenanceData.MotorRuntime := EquipmentList[1].RuntimeSeconds;
+  PlantMaintenanceData.MotorStarts  := EquipmentList[1].StartCount;
+  //
+  // Temperature Status
+  if PlantMaintenanceData.TemperatureSensorOK then
+   begin
+     EquipmentList[3].Status := msOK;
+   end
+  else
+   begin
+
+   end;
+  //
+  for i := 0 to EquipmentList.Count -1 do
+   begin
+     sgMaintenance.Cells[0, i + 1] := EquipmentList[i].EquipmentName;
+     sgMaintenance.Cells[1, i + 1] := IntToStr(EquipmentList[i].RuntimeSeconds) + ' sec';
+     sgMaintenance.Cells[2, i + 1] := IntToStr(EquipmentList[i].StartCount);
+     //
+     if EquipmentList[i].LastService = 0 then
+      begin
+        sgMaintenance.Cells[3, i + 1] := 'N/A';
+      end
+     else
+      begin
+        sgMaintenance.Cells[3, i + 1] := DateToStr(EquipmentList[i].LastService);
+      end;
+     //
+     if EquipmentList[i].ServiceInterval = 0 then
+      begin
+        sgMaintenance.Cells[4, i + 1] := 'N/A';
+      end
+     else
+      begin
+        sgMaintenance.Cells[4, i + 1] := IntToStr(EquipmentList[i].ServiceInterval) + ' sec';
+      end;
+     //
+     case EquipmentList[i].Status of
+       msOK:
+         sgMaintenance.Cells[5, i + 1] := 'OK';
+       //
+       msServiceSoon:
+         sgMaintenance.Cells[5, i + 1] := 'SERVICE SOON';
+       //
+       msMaintenanceDue:
+         sgMaintenance.Cells[5, i + 1] := 'MAINTENANCE DUE';
+       //
+       msFault:
+         sgMaintenance.Cells[5, i + 1] :=  'FAULT';
+     end;
+   end;
+  //
+end;
+
+end.

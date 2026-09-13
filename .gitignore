@@ -1,0 +1,69 @@
+# Delphi compiled outputs
+*.exe
+*.dll
+*.dcu
+*.dcp
+*.bpl
+*.dsk
+*.dproj.local
+*.identcache
+*.cfg
+*.map
+*.tds
+*.tds2
+
+# Build folders (common targets)
+Win32/
+Win64/
+Debug/
+Release/
+Output/
+Bin/
+Build/
+
+# Backup and temporary files
+*~
+*.bak
+*.tmp
+*.old
+*.orig
+
+# IDE and editor settings
+.vscode/
+*.code-workspace
+*.local
+*.user
+*.suo
+
+# Package and library artifacts
+packages/
+lib/
+*.lib
+*.a
+
+# Logs and runtime files
+*.log
+*.pid
+*.lock
+
+# Environment and secrets
+.env
+.env.local
+secrets.*
+*.key
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Generated documentation / coverage
+doc/
+coverage/
+*.lcov
+
+# Misc
+.idea/
+node_modules/    # αν έχεις frontend tooling στο project
+dist/
+tmp/
